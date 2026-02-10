@@ -1,0 +1,7 @@
+{
+  "name": "Toastmasters Flyer Creator",
+  "description": "Create professional and visually stunning Toastmasters meeting flyers using AI-generated backgrounds and custom role player profiles.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
