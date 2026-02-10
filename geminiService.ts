@@ -2,9 +2,14 @@
 import { GoogleGenAI } from "@google/genai";
 
 export async function generateFlyerBackground(theme: string): Promise<string | null> {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("Gemini API Key is missing. Please ensure process.env.API_KEY is configured.");
+    return null;
+  }
+
   try {
-    // Initialize Gemini API client using the environment variable API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     const prompt = `Create a professional, modern, and high-quality background for a Toastmasters International meeting flyer. 
     The meeting theme is "${theme}". 
@@ -30,7 +35,13 @@ export async function generateFlyerBackground(theme: string): Promise<string | n
       }
     });
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    const candidate = response.candidates?.[0];
+    if (!candidate || !candidate.content || !candidate.content.parts) {
+      console.warn("No image parts found in the Gemini response.");
+      return null;
+    }
+
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
       }
@@ -44,9 +55,14 @@ export async function generateFlyerBackground(theme: string): Promise<string | n
 }
 
 export async function generateRoleAvatar(role: string, theme: string): Promise<string | null> {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.error("Gemini API Key is missing.");
+    return null;
+  }
+
   try {
-    // Initialize Gemini API client using the environment variable API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     
     const prompt = `A professional, corporate headshot of a person representing the Toastmasters role: "${role}". 
     Theme: "${theme}". 
@@ -65,7 +81,10 @@ export async function generateRoleAvatar(role: string, theme: string): Promise<s
       }
     });
 
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    const candidate = response.candidates?.[0];
+    if (!candidate || !candidate.content || !candidate.content.parts) return null;
+
+    for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
       }

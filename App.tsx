@@ -90,28 +90,41 @@ const App: React.FC = () => {
 
   const handleMagicPhoto = async (id: string, roleName: string) => {
     setGeneratingIds(prev => new Set(prev).add(id));
-    const url = await generateRoleAvatar(roleName || "Speaker", details.theme);
-    if (url) {
-      updateRole(id, { photoUrl: url });
+    try {
+      const url = await generateRoleAvatar(roleName || "Speaker", details.theme);
+      if (url) {
+        updateRole(id, { photoUrl: url });
+      }
+    } catch (err) {
+      console.error("Magic Photo Error:", err);
+    } finally {
+      setGeneratingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
-    setGeneratingIds(prev => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
   };
 
   const handleGenerateBackground = async () => {
+    if (isGeneratingBg) return;
     setIsGeneratingBg(true);
-    const url = await generateFlyerBackground(details.theme);
-    if (url) {
-      setBackgroundUrl(url);
+    try {
+      const url = await generateFlyerBackground(details.theme);
+      if (url) {
+        setBackgroundUrl(url);
+      } else {
+        console.warn("No background URL returned from Gemini.");
+      }
+    } catch (err) {
+      console.error("Background Generation Error:", err);
+    } finally {
+      setIsGeneratingBg(false);
     }
-    setIsGeneratingBg(false);
   };
 
   const handleDownloadImage = async () => {
-    if (!flyerRef.current) return;
+    if (!flyerRef.current || isDownloading) return;
     setIsDownloading(true);
     try {
       const dataUrl = await toPng(flyerRef.current, { 
@@ -125,7 +138,7 @@ const App: React.FC = () => {
       link.click();
     } catch (err) {
       console.error('Failed to capture flyer image:', err);
-      alert('Download failed.');
+      alert('Download failed. Please try again.');
     } finally {
       setIsDownloading(false);
     }
@@ -235,10 +248,19 @@ const App: React.FC = () => {
                 <button 
                   onClick={handleGenerateBackground}
                   disabled={isGeneratingBg}
-                  className="group px-6 py-3 bg-white text-tm-blue rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center gap-3 shadow-lg hover:scale-105 active:scale-95"
+                  className="group px-6 py-3 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center gap-3 shadow-lg hover:scale-105 active:scale-95 disabled:cursor-not-allowed"
                 >
-                  {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
-                  {isGeneratingBg ? "Creating..." : "AI Magic BG"}
+                  {isGeneratingBg ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                      <span>AI Magic BG</span>
+                    </>
+                  )}
                 </button>
               </div>
 
