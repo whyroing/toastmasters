@@ -114,7 +114,7 @@ const App: React.FC = () => {
       if (url) {
         setBackgroundUrl(url);
       } else {
-        console.warn("No background URL returned from Gemini.");
+        console.warn("No background URL returned from Gemini. Check if your API_KEY is correctly set in the environment.");
       }
     } catch (err) {
       console.error("Background Generation Error:", err);
@@ -237,8 +237,8 @@ const App: React.FC = () => {
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-tm-maroon/20 rounded-full -ml-16 -mb-16 blur-3xl"></div>
             
             <div className="relative z-10 space-y-8">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="shrink-0">
                   <h2 className="text-xl font-black flex items-center gap-3">
                     <Palette className="w-6 h-6 text-tm-yellow" />
                     Studio Style
@@ -248,7 +248,7 @@ const App: React.FC = () => {
                 <button 
                   onClick={handleGenerateBackground}
                   disabled={isGeneratingBg}
-                  className="group px-6 py-3 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center gap-3 shadow-lg hover:scale-105 active:scale-95 disabled:cursor-not-allowed"
+                  className="group min-w-fit px-6 py-3 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg hover:scale-105 active:scale-95 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   {isGeneratingBg ? (
                     <>

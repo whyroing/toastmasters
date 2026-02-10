@@ -8,8 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
     <script>
-      // Keep polyfill to prevent ReferenceError on Netlify
-      window.process = window.process || { env: { API_KEY: "" } };
+      // More robust polyfill for deployment environments like Netlify
+      if (typeof window.process === 'undefined') {
+        window.process = { env: { API_KEY: "" } };
+      } else if (typeof window.process.env === 'undefined') {
+        window.process.env = { API_KEY: "" };
+      }
       
       tailwind.config = {
         theme: {
