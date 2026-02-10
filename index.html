@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
     <script>
+      // Keep polyfill to prevent ReferenceError on Netlify
+      window.process = window.process || { env: { API_KEY: "" } };
+      
       tailwind.config = {
         theme: {
           extend: {
@@ -65,7 +68,6 @@
             animation: shimmer 4s linear infinite;
         }
 
-        /* Utility to hide scrollbar while keeping functionality */
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -139,5 +141,6 @@
 </head>
 <body>
     <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
