@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, Square, Circle, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Key } from 'lucide-react';
-import { RolePlayer, MeetingDetails } from './types';
-import { generateFlyerBackground, generateRoleAvatar } from './geminiService';
-import FlyerCanvas from './components/FlyerCanvas';
+import { RolePlayer, MeetingDetails } from './types.ts';
+import { generateFlyerBackground, generateRoleAvatar } from './geminiService.ts';
+import FlyerCanvas from './components/FlyerCanvas.tsx';
 import { toPng } from 'html-to-image';
 
 const FULL_MEETING_ROLES = [
@@ -46,7 +46,7 @@ const App: React.FC = () => {
     globalPhotoScale: 1.0
   });
 
-  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(!!process.env.API_KEY);
 
   useEffect(() => {
     const checkKey = async () => {
@@ -62,6 +62,7 @@ const App: React.FC = () => {
     if (window.aistudio?.openSelectKey) {
       await window.aistudio.openSelectKey();
       setHasApiKey(true);
+      setErrorMsg(null);
     }
   };
 
@@ -125,13 +126,17 @@ const App: React.FC = () => {
     console.error("API Error:", err);
     if (err.message?.includes("Requested entity was not found") || err.message?.includes("API key")) {
       setHasApiKey(false);
-      setErrorMsg("Project setup required. Please select a valid API key with billing enabled.");
+      setErrorMsg("Please select a valid paid API key to use AI generation features.");
     } else {
-      setErrorMsg(err.message || "An unexpected error occurred.");
+      setErrorMsg(err.message || "An unexpected error occurred during generation.");
     }
   };
 
   const handleMagicPhoto = async (id: string, roleName: string) => {
+    if (!hasApiKey && !process.env.API_KEY) {
+      handleOpenKeyDialog();
+      return;
+    }
     setErrorMsg(null);
     setGeneratingIds(prev => new Set(prev).add(id));
     try {
@@ -139,7 +144,7 @@ const App: React.FC = () => {
       if (url) {
         updateRole(id, { photoUrl: url });
       } else {
-        setErrorMsg("Failed to generate avatar. Verify your connection.");
+        setErrorMsg("Avatar generation failed. Check your project configuration.");
       }
     } catch (err: any) {
       handleError(err);
@@ -153,6 +158,10 @@ const App: React.FC = () => {
   };
 
   const handleGenerateBackground = async () => {
+    if (!hasApiKey && !process.env.API_KEY) {
+      handleOpenKeyDialog();
+      return;
+    }
     if (isGeneratingBg) return;
     setErrorMsg(null);
     setIsGeneratingBg(true);
@@ -161,7 +170,7 @@ const App: React.FC = () => {
       if (url) {
         setBackgroundUrl(url);
       } else {
-        setErrorMsg("AI background generation returned no image.");
+        setErrorMsg("Background generation returned no image.");
       }
     } catch (err: any) {
       handleError(err);
@@ -184,8 +193,8 @@ const App: React.FC = () => {
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('Failed to capture flyer image:', err);
-      setErrorMsg('Export failed. Please try again.');
+      console.error('Download error:', err);
+      setErrorMsg('Failed to export flyer. Please try again.');
     } finally {
       setIsDownloading(false);
     }
@@ -197,7 +206,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:flex-row font-sans text-slate-900">
       {/* Error Alert */}
       {errorMsg && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[110] animate-in slide-in-from-top-4 duration-300">
           <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[320px]">
             <AlertCircle className="w-6 h-6 shrink-0" />
             <div className="flex-1 text-sm font-semibold">{errorMsg}</div>
@@ -208,24 +217,22 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* API Key Banner */}
-      {!hasApiKey && (
-        <div className="fixed bottom-6 left-6 right-6 lg:left-1/2 lg:-translate-x-1/2 lg:w-max z-[100] animate-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-tm-blue text-white px-8 py-5 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center gap-6 border border-white/20">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 rounded-2xl">
-                <Key className="w-6 h-6 text-tm-yellow" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-black uppercase tracking-widest">API Key Required</p>
-                <p className="text-xs text-blue-100/70">Select a project with billing enabled to use AI features.</p>
-              </div>
+      {/* API Key Modal Overlay */}
+      {(!hasApiKey && !process.env.API_KEY) && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100 animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-tm-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Key className="w-10 h-10 text-tm-blue" />
             </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-3">API Setup Required</h2>
+            <p className="text-slate-500 text-sm leading-relaxed mb-8">
+              To use AI-powered features, please select a valid Google Cloud API key with <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-tm-blue font-bold underline">billing enabled</a>.
+            </p>
             <button 
               onClick={handleOpenKeyDialog}
-              className="px-6 py-3 bg-tm-yellow text-tm-blue rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform"
+              className="w-full py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 transition-all hover:scale-105"
             >
-              Select API Key
+              Select Project API Key
             </button>
           </div>
         </div>
@@ -324,11 +331,10 @@ const App: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Brand Identity Palette with Mixed Options */}
                 <div className="md:col-span-2 space-y-4 text-left">
                   <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
                     <Award className="w-3.5 h-3.5" />
-                    Brand Identity Palette (Solid & Mixed)
+                    Brand Identity Palette
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                     {BRAND_COLORS.map((color) => (
@@ -344,9 +350,6 @@ const App: React.FC = () => {
                             <Check className={`w-5 h-5 ${color.id === 'yellow' || color.id === 'grey' ? 'text-slate-900' : 'text-tm-yellow'}`} />
                           </div>
                         )}
-                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-black uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-black/50 px-1 rounded">
-                          {color.label}
-                        </span>
                       </button>
                     ))}
                   </div>
@@ -374,35 +377,15 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Global Photo Frame Size Slider */}
                 <div className="md:col-span-2 space-y-4 text-left">
                   <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
                     <div className="flex items-center gap-2">
                       <Maximize2 className="w-3.5 h-3.5" />
-                      Global Photo Frame Size
+                      Global Scale
                     </div>
                     <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{details.globalPhotoScale?.toFixed(1)}x</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0.5" 
-                    max="2.0" 
-                    step="0.1"
-                    value={details.globalPhotoScale} 
-                    onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} 
-                    className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" 
-                  />
-                </div>
-
-                <div className="md:col-span-2 space-y-4 text-left">
-                  <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                      <Sliders className="w-3.5 h-3.5" />
-                      Overlay Blend
-                    </div>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{bgOpacity}%</span>
-                  </div>
-                  <input type="range" min="0" max="100" value={bgOpacity} onChange={(e) => setBgOpacity(parseInt(e.target.value))} className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" />
+                  <input type="range" min="0.5" max="2.0" step="0.1" value={details.globalPhotoScale} onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" />
                 </div>
               </div>
             </div>
@@ -415,68 +398,49 @@ const App: React.FC = () => {
                   <UserCheck className="w-5 h-5 text-tm-maroon" />
                   Role Players
                 </h2>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-                  {details.flyerType === 'spotlight' ? 'Add featured members' : 'Assign roles for the meeting'}
-                </p>
               </div>
-              <button onClick={addRole} className="group flex items-center gap-2 px-5 py-2.5 bg-tm-maroon text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-tm-maroon/90 shadow-xl shadow-tm-maroon/20 transition-all hover:-translate-y-1 active:scale-95">
+              <button onClick={addRole} className="group flex items-center gap-2 px-5 py-2.5 bg-tm-maroon text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-tm-maroon/90 shadow-xl transition-all hover:-translate-y-1 active:scale-95">
                 <Plus className="w-3 h-3 group-hover:rotate-90 transition-transform" />
-                Add {details.flyerType === 'spotlight' ? 'Member' : 'Role'}
+                Add Member
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
               {roles.map((role) => (
-                <div key={role.id} className="group bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-tm-maroon/10 transition-all duration-300 flex flex-col gap-4">
+                <div key={role.id} className="group bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col gap-4">
                   <div className="flex items-center gap-6">
                     <div className="relative shrink-0">
-                      <div className={`w-16 h-16 ${photoStyle === 'circle' ? 'rounded-full' : 'rounded-2xl'} bg-slate-50 border-2 border-slate-100 flex items-center justify-center overflow-hidden shadow-inner transition-all group-hover:border-tm-maroon/30`}>
+                      <div className={`w-16 h-16 ${photoStyle === 'circle' ? 'rounded-full' : 'rounded-2xl'} bg-slate-50 border-2 border-slate-100 flex items-center justify-center overflow-hidden transition-all group-hover:border-tm-maroon/30`}>
                         {generatingIds.has(role.id) ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <Loader2 className="w-5 h-5 text-tm-blue animate-spin" />
-                          </div>
+                          <Loader2 className="w-5 h-5 text-tm-blue animate-spin" />
                         ) : role.photoUrl ? (
                           <img src={role.photoUrl} className="w-full h-full object-cover" />
                         ) : (
                           <Camera className="w-5 h-5 text-slate-300" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                      <div className="absolute -bottom-1 -right-1 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <label className="p-2 bg-tm-blue text-white rounded-full cursor-pointer shadow-xl hover:scale-110 active:scale-90 transition-all">
                           <Plus className="w-3 h-3" />
                           <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(role.id, e)} />
                         </label>
-                        <button onClick={() => handleMagicPhoto(role.id, role.role)} disabled={generatingIds.has(role.id)} className="p-2 bg-tm-yellow text-tm-blue rounded-full shadow-xl hover:scale-110 active:scale-90 transition-all disabled:opacity-50" title="AI Magic Photo">
+                        <button onClick={() => handleMagicPhoto(role.id, role.role)} disabled={generatingIds.has(role.id)} className="p-2 bg-tm-yellow text-tm-blue rounded-full shadow-xl hover:scale-110 active:scale-90 transition-all disabled:opacity-50">
                           <Sparkles className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
-
-                    <div className="flex-1 space-y-3 text-left">
-                      <div className="flex flex-col gap-0.5">
-                        <input className="w-full text-[9px] font-black text-tm-maroon border-none bg-transparent focus:ring-0 p-0 uppercase tracking-widest placeholder:text-tm-maroon/30" value={role.role} onChange={(e) => updateRole(role.id, { role: e.target.value })} placeholder="Enter Role..." />
-                        <input className="w-full text-sm font-bold text-slate-800 border-none bg-transparent focus:ring-0 p-0 placeholder:text-slate-300" value={role.name} onChange={(e) => updateRole(role.id, { name: e.target.value })} placeholder="Member Name" />
-                      </div>
+                    <div className="flex-1 text-left">
+                      <input className="w-full text-[9px] font-black text-tm-maroon border-none bg-transparent focus:ring-0 p-0 uppercase tracking-widest placeholder:text-tm-maroon/30" value={role.role} onChange={(e) => updateRole(role.id, { role: e.target.value })} placeholder="Enter Role..." />
+                      <input className="w-full text-sm font-bold text-slate-800 border-none bg-transparent focus:ring-0 p-0 placeholder:text-slate-300" value={role.name} onChange={(e) => updateRole(role.id, { name: e.target.value })} placeholder="Member Name" />
                     </div>
-
-                    <button onClick={() => removeRole(role.id)} className="p-3 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-200">
+                    <button onClick={() => removeRole(role.id)} className="p-3 text-slate-200 hover:text-red-500 transition-all duration-200">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
-                  
-                  {/* Individual Scaling Control */}
                   <div className="flex items-center gap-4 px-1 pt-2 border-t border-slate-50">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Frame Scale</span>
-                    <input 
-                      type="range" 
-                      min="0.5" 
-                      max="2.0" 
-                      step="0.05"
-                      value={role.scale || 1.0} 
-                      onChange={(e) => updateRole(role.id, { scale: parseFloat(e.target.value) })}
-                      className="flex-1 h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tm-maroon" 
-                    />
-                    <span className="text-[9px] font-mono text-slate-400 min-w-[30px] text-right">{(role.scale || 1.0).toFixed(1)}x</span>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Scale</span>
+                    <input type="range" min="0.5" max="2.0" step="0.05" value={role.scale || 1.0} onChange={(e) => updateRole(role.id, { scale: parseFloat(e.target.value) })} className="flex-1 h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tm-maroon" />
+                    <span className="text-[9px] font-mono text-slate-400">{(role.scale || 1.0).toFixed(1)}x</span>
                   </div>
                 </div>
               ))}
@@ -487,19 +451,15 @@ const App: React.FC = () => {
 
       <div className="w-full lg:w-[55%] bg-[#E2E8F0] flex flex-col items-center justify-center p-6 lg:p-12 sticky top-0 print:p-0 print:bg-white print:static print:w-full print:h-screen">
         <div className="mb-8 flex gap-4 no-print z-50 animate-in fade-in zoom-in duration-1000 delay-300">
-          <button onClick={handleDownloadImage} disabled={isDownloading} className="group flex items-center gap-3 px-8 py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 hover:shadow-2xl hover:shadow-tm-blue/30 transition-all active:scale-95 disabled:opacity-50">
-            {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />}
+          <button onClick={handleDownloadImage} disabled={isDownloading} className="group flex items-center gap-3 px-8 py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50">
+            {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
             <span>{isDownloading ? 'Saving...' : 'Export PNG'}</span>
           </button>
         </div>
-
-        <div id="flyer-preview-container" ref={flyerRef} className="w-full max-w-[480px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-tm-blue aspect-[3/4] relative print:shadow-none print:max-w-none animate-in fade-in slide-in-from-right-8 duration-1000">
+        <div id="flyer-preview-container" ref={flyerRef} className="w-full max-w-[480px] shadow-2xl bg-tm-blue aspect-[3/4] relative print:shadow-none print:max-w-none">
           <FlyerCanvas details={details} roles={roles} backgroundUrl={backgroundUrl} bgOpacity={bgOpacity} photoStyle={photoStyle} />
         </div>
-        
-        <div className="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] no-print opacity-50">
-          Live Studio Preview
-        </div>
+        <div className="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] no-print opacity-50">Live Preview</div>
       </div>
     </div>
   );

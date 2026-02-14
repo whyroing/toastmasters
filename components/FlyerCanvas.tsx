@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { MapPin, Calendar, Clock, Users, Shield, Zap } from 'lucide-react';
-import { RolePlayer, MeetingDetails } from '../types';
+import { RolePlayer, MeetingDetails } from '../types.ts';
 
 interface FlyerCanvasProps {
   details: MeetingDetails;
@@ -41,12 +41,10 @@ const RoleItem: React.FC<RoleItemProps> = ({
   const textMainClass = isLightBackground ? 'text-slate-900' : 'text-white';
   const textRoleClass = isLightBackground ? 'text-tm-blue' : 'text-tm-yellow';
   
-  // Base dimensions based on variant
-  const baseSize = variant === 'large' ? 112 : 64; // in pixels
+  const baseSize = variant === 'large' ? 112 : 64; 
   const combinedScale = (role?.scale || 1.0) * globalScale;
   const finalSize = baseSize * combinedScale;
   
-  // Width of container needs to be slightly larger than the photo to avoid text wrapping too tight
   const containerWidth = finalSize + 32;
 
   return (
@@ -73,7 +71,7 @@ const RoleItem: React.FC<RoleItemProps> = ({
           {role?.role || labelIfEmpty || "Role"}
         </p>
         <p className={`${variant === 'large' ? 'text-[10px] sm:text-[12px]' : 'text-[9px] sm:text-[10px]'} font-bold ${textMainClass} leading-tight drop-shadow-lg truncate w-full`}>
-          {role?.name || "To Be Announced"}
+          {role?.name || "TBA"}
         </p>
       </div>
     </div>
@@ -128,48 +126,14 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
   const globalPhotoScale = details.globalPhotoScale || 1.0;
   
   let baseColorClass = 'bg-tm-blue';
-  let gradientClass = 'from-tm-blue via-tm-blue to-black';
   let isLightBackground = false;
 
   switch (themeColor) {
-    case 'maroon':
-      baseColorClass = 'bg-tm-maroon';
-      gradientClass = 'from-tm-maroon via-tm-maroon to-black';
-      break;
-    case 'grey':
-      baseColorClass = 'bg-tm-grey';
-      gradientClass = 'from-tm-grey via-tm-grey to-slate-400';
-      isLightBackground = true;
-      break;
-    case 'yellow':
-      baseColorClass = 'bg-tm-yellow';
-      gradientClass = 'from-tm-yellow via-tm-yellow to-orange-200';
-      isLightBackground = true;
-      break;
-    case 'midnight':
-      baseColorClass = 'bg-slate-950';
-      gradientClass = 'from-slate-900 via-black to-slate-900';
-      break;
-    case 'royal':
-      baseColorClass = 'bg-tm-blue';
-      gradientClass = 'from-tm-blue via-tm-maroon to-black';
-      break;
-    case 'sunset':
-      baseColorClass = 'bg-tm-maroon';
-      gradientClass = 'from-tm-maroon via-tm-yellow to-tm-maroon';
-      isLightBackground = false;
-      break;
-    case 'ocean':
-      baseColorClass = 'bg-tm-blue';
-      gradientClass = 'from-tm-blue via-slate-900 to-black';
-      break;
-    case 'platinum':
-      baseColorClass = 'bg-tm-blue';
-      gradientClass = 'from-tm-blue via-tm-grey to-tm-blue';
-      break;
-    default:
-      baseColorClass = 'bg-tm-blue';
-      gradientClass = 'from-tm-blue via-tm-blue to-black';
+    case 'maroon': baseColorClass = 'bg-tm-maroon'; break;
+    case 'grey': baseColorClass = 'bg-tm-grey'; isLightBackground = true; break;
+    case 'yellow': baseColorClass = 'bg-tm-yellow'; isLightBackground = true; break;
+    case 'midnight': baseColorClass = 'bg-slate-950'; break;
+    default: baseColorClass = 'bg-tm-blue';
   }
 
   const findRoles = (keywords: string[]) => 
@@ -182,123 +146,69 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
   const textAccentClass = isLightBackground ? 'text-tm-blue' : 'text-tm-yellow';
   const badgeClass = isLightBackground ? 'bg-tm-blue text-white' : 'bg-tm-maroon/90 text-tm-yellow';
 
-  const renderFullMeeting = () => (
-    <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto no-scrollbar py-2">
-      <CategorySection 
-        title="Leadership Team" 
-        icon={Shield} 
-        items={leadership} 
-        photoStyle={photoStyle}
-        layoutPattern={layoutPattern}
-        isFocusedSection={true} 
-        themeColor={themeColor}
-        isLightBackground={isLightBackground}
-        globalScale={globalPhotoScale}
-      />
-      <CategorySection 
-        title="Technical Support" 
-        icon={Zap} 
-        items={support} 
-        photoStyle={photoStyle}
-        layoutPattern={layoutPattern}
-        themeColor={themeColor}
-        isLightBackground={isLightBackground}
-        globalScale={globalPhotoScale}
-      />
-    </div>
-  );
-
-  const renderSpotlight = () => {
-    const isLarge = roles.length <= 2;
-    return (
-      <div className="flex-1 flex flex-wrap items-center justify-center gap-x-6 gap-y-8 px-4 py-6 overflow-y-auto no-scrollbar">
-        {roles.map((role, idx) => (
-          <RoleItem 
-            key={role.id} 
-            role={role} 
-            photoStyle={photoStyle} 
-            layoutPattern="standard" 
-            variant={isLarge ? 'large' : 'normal'} 
-            themeColor={themeColor}
-            isLightBackground={isLightBackground}
-            index={idx}
-            globalScale={globalPhotoScale}
-          />
-        ))}
-      </div>
-    );
-  };
-
   const logoUrl = "https://i.postimg.cc/V6m9zvZR/logo.jpg";
 
   return (
     <div className={`relative w-full h-full flex flex-col font-sans overflow-hidden transition-all duration-500 ${baseColorClass}`}>
       <div className="absolute inset-0 z-0">
         {backgroundUrl ? (
-          <img 
-            src={backgroundUrl} 
-            className="w-full h-full object-cover transition-opacity duration-300" 
-            style={{ opacity: bgOpacity / 100 }}
-            alt="Flyer Background" 
-          />
+          <img src={backgroundUrl} className="w-full h-full object-cover transition-opacity duration-300" style={{ opacity: bgOpacity / 100 }} alt="Flyer Background" />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${gradientClass}`} />
+          <div className={`w-full h-full bg-gradient-to-br from-black/20 to-black/60`} />
         )}
-        <div className={`absolute inset-0 ${isLightBackground ? 'bg-white/10' : 'bg-gradient-to-t from-black/80 via-black/30 to-black/10'}`} />
+        <div className={`absolute inset-0 ${isLightBackground ? 'bg-white/10' : 'bg-black/20'}`} />
       </div>
 
       <div className={`relative z-10 flex flex-col h-full ${textMainClass} p-4 sm:p-5 lg:p-6 pt-5`}>
-        <div className={`absolute top-0 right-0 left-0 h-1 ${isLightBackground ? 'bg-tm-blue' : 'bg-tm-yellow'} shadow-md`} />
+        <div className={`absolute top-0 right-0 left-0 h-1 ${isLightBackground ? 'bg-tm-blue' : 'bg-tm-yellow'}`} />
         
         <div className="mb-4 flex flex-col items-center text-center shrink-0 w-full overflow-hidden">
           <div className="mb-2">
-             <img src={logoUrl} alt="Toastmasters Logo" className="h-8 sm:h-10 w-auto object-contain rounded shadow-lg border border-white/20 bg-white p-0.5" />
+             <img src={logoUrl} alt="TM Logo" className="h-8 sm:h-10 w-auto object-contain rounded bg-white p-0.5" />
           </div>
-          <div className="flex items-center gap-2 mb-1 w-full justify-center">
-            <div className="flex flex-col text-center overflow-hidden">
-              <span className={`text-[5px] lg:text-[6px] font-black tracking-[0.4em] uppercase ${textAccentClass} leading-none truncate`}>TOASTMASTERS INTERNATIONAL</span>
-              <span className={`text-[9px] lg:text-[11px] font-bold uppercase tracking-widest leading-tight drop-shadow-md truncate max-w-[200px] sm:max-w-none`}>{details.clubName}</span>
-            </div>
+          <div className="flex flex-col text-center overflow-hidden mb-1">
+              <span className={`text-[5px] lg:text-[6px] font-black tracking-[0.4em] uppercase ${textAccentClass}`}>TOASTMASTERS INTERNATIONAL</span>
+              <span className={`text-[9px] lg:text-[11px] font-bold uppercase tracking-widest truncate max-w-[200px] mx-auto`}>{details.clubName}</span>
           </div>
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-header font-black mb-1.5 drop-shadow-2xl leading-tight truncate w-full">
-            {details.flyerType === 'spotlight' ? "MEMBER SPOTLIGHT" : details.title.toUpperCase()}
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-header font-black mb-1.5 drop-shadow-2xl uppercase truncate w-full">
+            {details.flyerType === 'spotlight' ? "SPOTLIGHT" : details.title}
           </h1>
-          <div className={`${badgeClass} py-0.5 px-6 rounded-full border ${isLightBackground ? 'border-tm-blue/30' : 'border-tm-yellow/30'} shadow-xl max-w-[90%] mx-auto transition-colors duration-500`}>
-            <p className={`text-[8px] sm:text-[10px] lg:text-[11px] font-bold italic tracking-wide truncate`}>
-              Theme: {details.theme}
-            </p>
+          <div className={`${badgeClass} py-0.5 px-6 rounded-full border border-white/20 shadow-xl max-w-[90%] mx-auto`}>
+            <p className={`text-[8px] sm:text-[10px] lg:text-[11px] font-bold italic truncate`}>Theme: {details.theme}</p>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
-          {details.flyerType === 'spotlight' ? renderSpotlight() : renderFullMeeting()}
+          {details.flyerType === 'spotlight' ? (
+             <div className="flex-1 flex flex-wrap items-center justify-center gap-x-6 gap-y-8 px-4 py-6 overflow-y-auto no-scrollbar">
+               {roles.map((role) => (
+                 <RoleItem key={role.id} role={role} photoStyle={photoStyle} layoutPattern="standard" variant={roles.length <= 2 ? 'large' : 'normal'} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
+               ))}
+             </div>
+          ) : (
+             <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto no-scrollbar py-2">
+               <CategorySection title="Leadership Team" icon={Shield} items={leadership} photoStyle={photoStyle} layoutPattern={layoutPattern} isFocusedSection={true} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
+               <CategorySection title="Technical Support" icon={Zap} items={support} photoStyle={photoStyle} layoutPattern={layoutPattern} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
+             </div>
+          )}
         </div>
 
-        <div className={`mt-3 pt-3 border-t ${isLightBackground ? 'border-tm-blue/10' : 'border-tm-yellow/20'} shrink-0`}>
-          <div className={`grid grid-cols-3 gap-1 ${isLightBackground ? 'bg-white/90' : 'bg-black/80'} backdrop-blur-md rounded-xl p-3 border ${isLightBackground ? 'border-tm-blue/20' : 'border-white/20'} shadow-xl`}>
+        <div className={`mt-3 pt-3 border-t ${isLightBackground ? 'border-tm-blue/10' : 'border-white/10'} shrink-0`}>
+          <div className={`grid grid-cols-3 gap-1 ${isLightBackground ? 'bg-white/90' : 'bg-black/80'} backdrop-blur-md rounded-xl p-3 shadow-xl`}>
             <div className="flex flex-col items-center text-center gap-0.5 overflow-hidden">
-              <Calendar className={`w-3.5 h-3.5 ${textAccentClass} shrink-0`} />
-              <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>DATE</p>
-              <p className="text-[8px] sm:text-[10px] font-bold truncate w-full">
-                {new Date(details.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </p>
+              <Calendar className={`w-3.5 h-3.5 ${textAccentClass}`} />
+              <p className="text-[8px] sm:text-[10px] font-bold">{new Date(details.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
             </div>
-            <div className={`flex flex-col items-center text-center gap-0.5 border-x ${isLightBackground ? 'border-tm-blue/10' : 'border-tm-yellow/10'} overflow-hidden px-1`}>
-              <Clock className={`w-3.5 h-3.5 ${textAccentClass} shrink-0`} />
-              <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>TIME</p>
-              <p className="text-[8px] sm:text-[10px] font-bold truncate w-full">{details.time}</p>
+            <div className={`flex flex-col items-center text-center gap-0.5 border-x ${isLightBackground ? 'border-tm-blue/10' : 'border-white/10'} px-1`}>
+              <Clock className={`w-3.5 h-3.5 ${textAccentClass}`} />
+              <p className="text-[8px] sm:text-[10px] font-bold">{details.time}</p>
             </div>
-            <div className="flex flex-col items-center text-center gap-0.5 overflow-hidden col-span-1">
-              <MapPin className={`w-3.5 h-3.5 ${textAccentClass} shrink-0`} />
-              <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>VENUE</p>
-              <p className="text-[7px] sm:text-[9px] font-bold leading-tight w-full break-words line-clamp-3">
-                {details.location}
-              </p>
+            <div className="flex flex-col items-center text-center gap-0.5">
+              <MapPin className={`w-3.5 h-3.5 ${textAccentClass}`} />
+              <p className="text-[7px] sm:text-[9px] font-bold leading-tight line-clamp-2 text-center break-words">{details.location}</p>
             </div>
           </div>
-          <div className="mt-2.5 text-center">
-            <p className={`text-[7px] ${textAccentClass} opacity-80 uppercase font-black tracking-[0.5em] truncate`}>WHERE LEADERS ARE MADE</p>
-          </div>
+          <p className={`mt-2 text-center text-[7px] ${textAccentClass} opacity-80 uppercase font-black tracking-[0.5em]`}>WHERE LEADERS ARE MADE</p>
         </div>
       </div>
     </div>
