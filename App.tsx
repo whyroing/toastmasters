@@ -46,13 +46,17 @@ const App: React.FC = () => {
     globalPhotoScale: 1.0
   });
 
+  // Initial check for API key in process.env
   const [hasApiKey, setHasApiKey] = useState<boolean>(!!process.env.API_KEY);
 
   useEffect(() => {
     const checkKey = async () => {
+      // Check for platform-specific key selection state
       if (window.aistudio?.hasSelectedApiKey) {
         const selected = await window.aistudio.hasSelectedApiKey();
         setHasApiKey(selected || !!process.env.API_KEY);
+      } else {
+        setHasApiKey(!!process.env.API_KEY);
       }
     };
     checkKey();
@@ -61,6 +65,7 @@ const App: React.FC = () => {
   const handleOpenKeyDialog = async () => {
     if (window.aistudio?.openSelectKey) {
       await window.aistudio.openSelectKey();
+      // Assume success after triggering the dialog per guidelines
       setHasApiKey(true);
       setErrorMsg(null);
     }
@@ -126,7 +131,7 @@ const App: React.FC = () => {
     console.error("API Error:", err);
     if (err.message?.includes("Requested entity was not found") || err.message?.includes("API key")) {
       setHasApiKey(false);
-      setErrorMsg("Please select a valid paid API key to use AI generation features.");
+      setErrorMsg("Project setup required. Please select a valid API key with billing enabled.");
     } else {
       setErrorMsg(err.message || "An unexpected error occurred during generation.");
     }
@@ -217,7 +222,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* API Key Modal Overlay */}
+      {/* API Key Modal Overlay - only shows if no key is detected at all */}
       {(!hasApiKey && !process.env.API_KEY) && (
         <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100 animate-in zoom-in duration-300">
