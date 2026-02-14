@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, Square, Circle, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2 } from 'lucide-react';
+import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, Square, Circle, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Key } from 'lucide-react';
 import { RolePlayer, MeetingDetails } from './types';
 import { generateFlyerBackground, generateRoleAvatar } from './geminiService';
 import FlyerCanvas from './components/FlyerCanvas';
@@ -45,6 +45,25 @@ const App: React.FC = () => {
     themeColor: 'blue',
     globalPhotoScale: 1.0
   });
+
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio?.hasSelectedApiKey) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(selected || !!process.env.API_KEY);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeyDialog = async () => {
+    if (window.aistudio?.openSelectKey) {
+      await window.aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
 
   const createDefaultRoles = (type: 'full' | 'spotlight'): RolePlayer[] => {
     const rolesList = type === 'full' ? FULL_MEETING_ROLES : SPOTLIGHT_ROLES;
@@ -102,6 +121,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleError = (err: any) => {
+    console.error("API Error:", err);
+    if (err.message?.includes("Requested entity was not found") || err.message?.includes("API key")) {
+      setHasApiKey(false);
+      setErrorMsg("Project setup required. Please select a valid API key with billing enabled.");
+    } else {
+      setErrorMsg(err.message || "An unexpected error occurred.");
+    }
+  };
+
   const handleMagicPhoto = async (id: string, roleName: string) => {
     setErrorMsg(null);
     setGeneratingIds(prev => new Set(prev).add(id));
@@ -110,11 +139,10 @@ const App: React.FC = () => {
       if (url) {
         updateRole(id, { photoUrl: url });
       } else {
-        setErrorMsg("Failed to generate avatar. Verify your API connection.");
+        setErrorMsg("Failed to generate avatar. Verify your connection.");
       }
     } catch (err: any) {
-      console.error("Magic Photo Error:", err);
-      setErrorMsg(`Error generating photo: ${err.message || 'Unknown error'}`);
+      handleError(err);
     } finally {
       setGeneratingIds(prev => {
         const next = new Set(prev);
@@ -133,11 +161,10 @@ const App: React.FC = () => {
       if (url) {
         setBackgroundUrl(url);
       } else {
-        setErrorMsg("AI background generation returned no image. Check API status.");
+        setErrorMsg("AI background generation returned no image.");
       }
     } catch (err: any) {
-      console.error("Background Generation Error:", err);
-      setErrorMsg(`Generation failed: ${err.message || 'Check your internet connection'}`);
+      handleError(err);
     } finally {
       setIsGeneratingBg(false);
     }
@@ -181,6 +208,29 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* API Key Banner */}
+      {!hasApiKey && (
+        <div className="fixed bottom-6 left-6 right-6 lg:left-1/2 lg:-translate-x-1/2 lg:w-max z-[100] animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-tm-blue text-white px-8 py-5 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center gap-6 border border-white/20">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-2xl">
+                <Key className="w-6 h-6 text-tm-yellow" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-black uppercase tracking-widest">API Key Required</p>
+                <p className="text-xs text-blue-100/70">Select a project with billing enabled to use AI features.</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleOpenKeyDialog}
+              className="px-6 py-3 bg-tm-yellow text-tm-blue rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform"
+            >
+              Select API Key
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Editor Panel */}
       <div className="w-full lg:w-[45%] p-6 lg:p-12 overflow-y-auto no-print scroll-smooth">
         <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -198,7 +248,7 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <p className="text-slate-500 text-sm font-medium max-w-sm leading-relaxed">
+          <p className="text-slate-500 text-sm font-medium max-w-sm leading-relaxed text-left">
             Elevate your club's presence with professional, AI-powered design tools.
           </p>
         </header>
@@ -231,10 +281,10 @@ const App: React.FC = () => {
               <div className="md:col-span-2 space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Location / Link</label>
                 <textarea 
-                  rows={2}
-                  className={`${inputClasses} resize-none leading-relaxed`} 
+                  rows={3}
+                  className={`${inputClasses} resize-none leading-relaxed text-sm`} 
                   value={details.location} 
-                  placeholder="Enter full venue address or meeting URL" 
+                  placeholder="Enter full venue address clearly (e.g. Maurya Lok Complex, Patna)" 
                   onChange={(e) => setDetails({ ...details, location: e.target.value })} 
                 />
               </div>

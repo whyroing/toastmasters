@@ -4,17 +4,16 @@ import { GoogleGenAI } from "@google/genai";
 export async function generateFlyerBackground(theme: string): Promise<string | null> {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API Key is missing from the environment.");
+    throw new Error("API key is missing from the environment. Please ensure you have selected a project with billing enabled.");
   }
 
   try {
-    // Guidelines: Create new instance right before making an API call
     const ai = new GoogleGenAI({ apiKey });
     
-    const prompt = `Abstract artistic background for Toastmasters. Theme: "${theme}". 
-    Colors: Loyal Blue (#004165), True Maroon (#772432). 
-    Minimalist leadership aesthetics. Professional, blurred depth. No text. 
-    Design for a vertical flyer background.`;
+    const prompt = `Abstract minimalist high-resolution professional background for Toastmasters meeting. Theme: "${theme}". 
+    Incorporate brand colors: Loyal Blue (#004165) and True Maroon (#772432). 
+    Leadership, growth, and communication aesthetics. Vertical layout. No text or people. 
+    Professional lighting, elegant depth of field.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
@@ -47,14 +46,15 @@ export async function generateFlyerBackground(theme: string): Promise<string | n
 export async function generateRoleAvatar(role: string, theme: string): Promise<string | null> {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API Key is missing.");
+    throw new Error("API key is missing.");
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     
-    const prompt = `Close-up professional headshot of a person for Toastmasters role: "${role}". 
-    Elegant lighting, clean background, center aligned. Professional business attire.`;
+    const prompt = `Professional profile headshot for Toastmasters role: "${role}". 
+    Corporate professional attire, centered framing, high-quality lighting, soft blurred background. 
+    Professional communication context.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',

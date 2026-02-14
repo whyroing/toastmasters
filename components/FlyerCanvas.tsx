@@ -127,7 +127,6 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
   const themeColor = details.themeColor || 'blue';
   const globalPhotoScale = details.globalPhotoScale || 1.0;
   
-  // Dynamic color logic based on theme
   let baseColorClass = 'bg-tm-blue';
   let gradientClass = 'from-tm-blue via-tm-blue to-black';
   let isLightBackground = false;
@@ -210,7 +209,6 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
   );
 
   const renderSpotlight = () => {
-    // Dynamic grid for spotlight roles
     const isLarge = roles.length <= 2;
     return (
       <div className="flex-1 flex flex-wrap items-center justify-center gap-x-6 gap-y-8 px-4 py-6 overflow-y-auto no-scrollbar">
@@ -235,7 +233,6 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
 
   return (
     <div className={`relative w-full h-full flex flex-col font-sans overflow-hidden transition-all duration-500 ${baseColorClass}`}>
-      {/* Background Layer */}
       <div className="absolute inset-0 z-0">
         {backgroundUrl ? (
           <img 
@@ -250,27 +247,22 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
         <div className={`absolute inset-0 ${isLightBackground ? 'bg-white/10' : 'bg-gradient-to-t from-black/80 via-black/30 to-black/10'}`} />
       </div>
 
-      {/* Content Layer */}
       <div className={`relative z-10 flex flex-col h-full ${textMainClass} p-4 sm:p-5 lg:p-6 pt-5`}>
         <div className={`absolute top-0 right-0 left-0 h-1 ${isLightBackground ? 'bg-tm-blue' : 'bg-tm-yellow'} shadow-md`} />
         
-        {/* Header */}
         <div className="mb-4 flex flex-col items-center text-center shrink-0 w-full overflow-hidden">
           <div className="mb-2">
              <img src={logoUrl} alt="Toastmasters Logo" className="h-8 sm:h-10 w-auto object-contain rounded shadow-lg border border-white/20 bg-white p-0.5" />
           </div>
-
           <div className="flex items-center gap-2 mb-1 w-full justify-center">
             <div className="flex flex-col text-center overflow-hidden">
               <span className={`text-[5px] lg:text-[6px] font-black tracking-[0.4em] uppercase ${textAccentClass} leading-none truncate`}>TOASTMASTERS INTERNATIONAL</span>
               <span className={`text-[9px] lg:text-[11px] font-bold uppercase tracking-widest leading-tight drop-shadow-md truncate max-w-[200px] sm:max-w-none`}>{details.clubName}</span>
             </div>
           </div>
-          
           <h1 className="text-lg sm:text-xl lg:text-2xl font-header font-black mb-1.5 drop-shadow-2xl leading-tight truncate w-full">
             {details.flyerType === 'spotlight' ? "MEMBER SPOTLIGHT" : details.title.toUpperCase()}
           </h1>
-          
           <div className={`${badgeClass} py-0.5 px-6 rounded-full border ${isLightBackground ? 'border-tm-blue/30' : 'border-tm-yellow/30'} shadow-xl max-w-[90%] mx-auto transition-colors duration-500`}>
             <p className={`text-[8px] sm:text-[10px] lg:text-[11px] font-bold italic tracking-wide truncate`}>
               Theme: {details.theme}
@@ -278,14 +270,12 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
           </div>
         </div>
 
-        {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
           {details.flyerType === 'spotlight' ? renderSpotlight() : renderFullMeeting()}
         </div>
 
-        {/* Footer */}
         <div className={`mt-3 pt-3 border-t ${isLightBackground ? 'border-tm-blue/10' : 'border-tm-yellow/20'} shrink-0`}>
-          <div className={`grid grid-cols-3 gap-1 ${isLightBackground ? 'bg-white/80' : 'bg-black/70'} backdrop-blur-md rounded-xl p-3 border ${isLightBackground ? 'border-tm-blue/10' : 'border-white/10'} shadow-xl`}>
+          <div className={`grid grid-cols-3 gap-1 ${isLightBackground ? 'bg-white/90' : 'bg-black/80'} backdrop-blur-md rounded-xl p-3 border ${isLightBackground ? 'border-tm-blue/20' : 'border-white/20'} shadow-xl`}>
             <div className="flex flex-col items-center text-center gap-0.5 overflow-hidden">
               <Calendar className={`w-3.5 h-3.5 ${textAccentClass} shrink-0`} />
               <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>DATE</p>
@@ -298,17 +288,16 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
               <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>TIME</p>
               <p className="text-[8px] sm:text-[10px] font-bold truncate w-full">{details.time}</p>
             </div>
-            <div className="flex flex-col items-center text-center gap-0.5 overflow-hidden">
+            <div className="flex flex-col items-center text-center gap-0.5 overflow-hidden col-span-1">
               <MapPin className={`w-3.5 h-3.5 ${textAccentClass} shrink-0`} />
               <p className={`text-[5px] uppercase ${textAccentClass} font-black tracking-widest`}>VENUE</p>
-              <p className="text-[8px] sm:text-[9px] font-bold leading-tight w-full break-words">
+              <p className="text-[7px] sm:text-[9px] font-bold leading-tight w-full break-words line-clamp-3">
                 {details.location}
               </p>
             </div>
           </div>
-          
           <div className="mt-2.5 text-center">
-            <p className={`text-[7px] ${textAccentClass} opacity-70 uppercase font-black tracking-[0.5em] truncate`}>WHERE LEADERS ARE MADE</p>
+            <p className={`text-[7px] ${textAccentClass} opacity-80 uppercase font-black tracking-[0.5em] truncate`}>WHERE LEADERS ARE MADE</p>
           </div>
         </div>
       </div>
