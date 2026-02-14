@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, Square, Circle, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Key } from 'lucide-react';
+import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2 } from 'lucide-react';
 import { RolePlayer, MeetingDetails } from './types.ts';
 import { generateFlyerBackground, generateRoleAvatar } from './geminiService.ts';
 import FlyerCanvas from './components/FlyerCanvas.tsx';
@@ -45,31 +45,6 @@ const App: React.FC = () => {
     themeColor: 'blue',
     globalPhotoScale: 1.0
   });
-
-  // Initial check for API key in process.env
-  const [hasApiKey, setHasApiKey] = useState<boolean>(!!process.env.API_KEY);
-
-  useEffect(() => {
-    const checkKey = async () => {
-      // Check for platform-specific key selection state
-      if (window.aistudio?.hasSelectedApiKey) {
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasApiKey(selected || !!process.env.API_KEY);
-      } else {
-        setHasApiKey(!!process.env.API_KEY);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleOpenKeyDialog = async () => {
-    if (window.aistudio?.openSelectKey) {
-      await window.aistudio.openSelectKey();
-      // Assume success after triggering the dialog per guidelines
-      setHasApiKey(true);
-      setErrorMsg(null);
-    }
-  };
 
   const createDefaultRoles = (type: 'full' | 'spotlight'): RolePlayer[] => {
     const rolesList = type === 'full' ? FULL_MEETING_ROLES : SPOTLIGHT_ROLES;
@@ -129,19 +104,10 @@ const App: React.FC = () => {
 
   const handleError = (err: any) => {
     console.error("API Error:", err);
-    if (err.message?.includes("Requested entity was not found") || err.message?.includes("API key")) {
-      setHasApiKey(false);
-      setErrorMsg("Project setup required. Please select a valid API key with billing enabled.");
-    } else {
-      setErrorMsg(err.message || "An unexpected error occurred during generation.");
-    }
+    setErrorMsg(err.message || "An unexpected error occurred during generation. Please ensure your API key is correctly configured in the environment.");
   };
 
   const handleMagicPhoto = async (id: string, roleName: string) => {
-    if (!hasApiKey && !process.env.API_KEY) {
-      handleOpenKeyDialog();
-      return;
-    }
     setErrorMsg(null);
     setGeneratingIds(prev => new Set(prev).add(id));
     try {
@@ -149,7 +115,7 @@ const App: React.FC = () => {
       if (url) {
         updateRole(id, { photoUrl: url });
       } else {
-        setErrorMsg("Avatar generation failed. Check your project configuration.");
+        setErrorMsg("Avatar generation failed. Please try again.");
       }
     } catch (err: any) {
       handleError(err);
@@ -163,10 +129,6 @@ const App: React.FC = () => {
   };
 
   const handleGenerateBackground = async () => {
-    if (!hasApiKey && !process.env.API_KEY) {
-      handleOpenKeyDialog();
-      return;
-    }
     if (isGeneratingBg) return;
     setErrorMsg(null);
     setIsGeneratingBg(true);
@@ -217,27 +179,6 @@ const App: React.FC = () => {
             <div className="flex-1 text-sm font-semibold">{errorMsg}</div>
             <button onClick={() => setErrorMsg(null)} className="p-1 hover:bg-red-100 rounded-lg transition-colors">
               <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* API Key Modal Overlay - only shows if no key is detected at all */}
-      {(!hasApiKey && !process.env.API_KEY) && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100 animate-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-tm-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <Key className="w-10 h-10 text-tm-blue" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-3">API Setup Required</h2>
-            <p className="text-slate-500 text-sm leading-relaxed mb-8">
-              To use AI-powered features, please select a valid Google Cloud API key with <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-tm-blue font-bold underline">billing enabled</a>.
-            </p>
-            <button 
-              onClick={handleOpenKeyDialog}
-              className="w-full py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 transition-all hover:scale-105"
-            >
-              Select Project API Key
             </button>
           </div>
         </div>
