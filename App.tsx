@@ -1,6 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, Square, Circle, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Key } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Layers } from 'lucide-react';
 import { RolePlayer, MeetingDetails } from './types.ts';
 import { generateFlyerBackground, generateRoleAvatar } from './geminiService.ts';
 import FlyerCanvas from './components/FlyerCanvas.tsx';
@@ -45,31 +45,6 @@ const App: React.FC = () => {
     themeColor: 'blue',
     globalPhotoScale: 1.0
   });
-
-  // Initial check for API key in process.env
-  const [hasApiKey, setHasApiKey] = useState<boolean>(!!process.env.API_KEY);
-
-  useEffect(() => {
-    const checkKey = async () => {
-      // Check for platform-specific key selection state
-      if (window.aistudio?.hasSelectedApiKey) {
-        const selected = await window.aistudio.hasSelectedApiKey();
-        setHasApiKey(selected || !!process.env.API_KEY);
-      } else {
-        setHasApiKey(!!process.env.API_KEY);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleOpenKeyDialog = async () => {
-    if (window.aistudio?.openSelectKey) {
-      await window.aistudio.openSelectKey();
-      // Assume success after triggering the dialog per guidelines
-      setHasApiKey(true);
-      setErrorMsg(null);
-    }
-  };
 
   const createDefaultRoles = (type: 'full' | 'spotlight'): RolePlayer[] => {
     const rolesList = type === 'full' ? FULL_MEETING_ROLES : SPOTLIGHT_ROLES;
@@ -129,19 +104,10 @@ const App: React.FC = () => {
 
   const handleError = (err: any) => {
     console.error("API Error:", err);
-    if (err.message?.includes("Requested entity was not found") || err.message?.includes("API key")) {
-      setHasApiKey(false);
-      setErrorMsg("Project setup required. Please select a valid API key with billing enabled.");
-    } else {
-      setErrorMsg(err.message || "An unexpected error occurred during generation.");
-    }
+    setErrorMsg(err.message || "An unexpected error occurred. Please ensure your API key is active.");
   };
 
   const handleMagicPhoto = async (id: string, roleName: string) => {
-    if (!hasApiKey && !process.env.API_KEY) {
-      handleOpenKeyDialog();
-      return;
-    }
     setErrorMsg(null);
     setGeneratingIds(prev => new Set(prev).add(id));
     try {
@@ -149,7 +115,7 @@ const App: React.FC = () => {
       if (url) {
         updateRole(id, { photoUrl: url });
       } else {
-        setErrorMsg("Avatar generation failed. Check your project configuration.");
+        setErrorMsg("Avatar generation failed. Please try again.");
       }
     } catch (err: any) {
       handleError(err);
@@ -163,10 +129,6 @@ const App: React.FC = () => {
   };
 
   const handleGenerateBackground = async () => {
-    if (!hasApiKey && !process.env.API_KEY) {
-      handleOpenKeyDialog();
-      return;
-    }
     if (isGeneratingBg) return;
     setErrorMsg(null);
     setIsGeneratingBg(true);
@@ -174,6 +136,7 @@ const App: React.FC = () => {
       const url = await generateFlyerBackground(details.theme);
       if (url) {
         setBackgroundUrl(url);
+        setBgOpacity(100); // Reset blend to full on new generation
       } else {
         setErrorMsg("Background generation returned no image.");
       }
@@ -222,27 +185,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* API Key Modal Overlay - only shows if no key is detected at all */}
-      {(!hasApiKey && !process.env.API_KEY) && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-md w-full text-center border border-slate-100 animate-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-tm-blue/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <Key className="w-10 h-10 text-tm-blue" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-3">API Setup Required</h2>
-            <p className="text-slate-500 text-sm leading-relaxed mb-8">
-              To use AI-powered features, please select a valid Google Cloud API key with <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-tm-blue font-bold underline">billing enabled</a>.
-            </p>
-            <button 
-              onClick={handleOpenKeyDialog}
-              className="w-full py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 transition-all hover:scale-105"
-            >
-              Select Project API Key
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Editor Panel */}
       <div className="w-full lg:w-[45%] p-6 lg:p-12 overflow-y-auto no-print scroll-smooth">
         <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -261,7 +203,7 @@ const App: React.FC = () => {
             </div>
           </div>
           <p className="text-slate-500 text-sm font-medium max-w-sm leading-relaxed text-left">
-            Elevate your club's presence with professional, AI-powered design tools.
+            Professional AI-powered tools for Toastmasters clubs.
           </p>
         </header>
 
@@ -296,7 +238,7 @@ const App: React.FC = () => {
                   rows={3}
                   className={`${inputClasses} resize-none leading-relaxed text-sm`} 
                   value={details.location} 
-                  placeholder="Enter full venue address clearly (e.g. Maurya Lok Complex, Patna)" 
+                  placeholder="Enter full venue address or meeting link" 
                   onChange={(e) => setDetails({ ...details, location: e.target.value })} 
                 />
               </div>
@@ -314,23 +256,16 @@ const App: React.FC = () => {
                     <Palette className="w-6 h-6 text-tm-yellow" />
                     Studio Style
                   </h2>
-                  <p className="text-blue-100/60 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Refine the visual output</p>
                 </div>
                 <button 
                   onClick={handleGenerateBackground}
                   disabled={isGeneratingBg}
-                  className="group min-w-max px-8 py-4 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl hover:scale-105 active:scale-95 disabled:cursor-not-allowed whitespace-nowrap overflow-hidden"
+                  className="group min-w-max px-8 py-4 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl hover:scale-105 active:scale-95 disabled:cursor-not-allowed overflow-hidden"
                 >
                   {isGeneratingBg ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                      <span>Generating...</span>
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span>Generating...</span></>
                   ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform shrink-0" />
-                      <span>AI Magic BG</span>
-                    </>
+                    <><Sparkles className="w-4 h-4 shrink-0" /><span>AI Magic BG</span></>
                   )}
                 </button>
               </div>
@@ -339,14 +274,14 @@ const App: React.FC = () => {
                 <div className="md:col-span-2 space-y-4 text-left">
                   <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
                     <Award className="w-3.5 h-3.5" />
-                    Brand Identity Palette
+                    Brand Palette
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                     {BRAND_COLORS.map((color) => (
                       <button 
                         key={color.id}
                         onClick={() => setDetails(prev => ({ ...prev, themeColor: color.id as any }))}
-                        className={`group relative h-12 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${details.themeColor === color.id ? 'border-tm-yellow scale-105 shadow-[0_0_15px_rgba(242,223,116,0.5)]' : 'border-white/10 hover:border-white/30'}`}
+                        className={`group relative h-12 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${details.themeColor === color.id ? 'border-tm-yellow scale-105 shadow-lg' : 'border-white/10 hover:border-white/30'}`}
                         style={{ background: color.hex }}
                         title={color.label}
                       >
@@ -360,10 +295,50 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Background Blend Slider */}
+                <div className="md:col-span-2 space-y-4 text-left">
+                  <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5" />
+                      Background Blend
+                    </div>
+                    <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{bgOpacity}%</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    step="5" 
+                    value={bgOpacity} 
+                    onChange={(e) => setBgOpacity(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" 
+                  />
+                </div>
+
+                {/* Global Scale Slider */}
+                <div className="md:col-span-2 space-y-4 text-left">
+                  <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
+                    <div className="flex items-center gap-2">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      Global Frame Scale
+                    </div>
+                    <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{details.globalPhotoScale?.toFixed(1)}x</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.5" 
+                    max="2.0" 
+                    step="0.1" 
+                    value={details.globalPhotoScale} 
+                    onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} 
+                    className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" 
+                  />
+                </div>
+
                 <div className="space-y-4 text-left">
                   <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
                     <Layout className="w-3.5 h-3.5" />
-                    Blueprint
+                    Layout
                   </div>
                   <div className="flex bg-white/10 p-1.5 rounded-2xl border border-white/5">
                     <button onClick={() => handleFlyerTypeChange('full')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${details.flyerType === 'full' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Classic</button>
@@ -380,17 +355,6 @@ const App: React.FC = () => {
                     <button onClick={() => setPhotoStyle('circle')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${photoStyle === 'circle' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Circle</button>
                     <button onClick={() => setPhotoStyle('square')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${photoStyle === 'square' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Square</button>
                   </div>
-                </div>
-
-                <div className="md:col-span-2 space-y-4 text-left">
-                  <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      Global Scale
-                    </div>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{details.globalPhotoScale?.toFixed(1)}x</span>
-                  </div>
-                  <input type="range" min="0.5" max="2.0" step="0.1" value={details.globalPhotoScale} onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" />
                 </div>
               </div>
             </div>
@@ -443,7 +407,7 @@ const App: React.FC = () => {
                     </button>
                   </div>
                   <div className="flex items-center gap-4 px-1 pt-2 border-t border-slate-50">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Scale</span>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Local Scale</span>
                     <input type="range" min="0.5" max="2.0" step="0.05" value={role.scale || 1.0} onChange={(e) => updateRole(role.id, { scale: parseFloat(e.target.value) })} className="flex-1 h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tm-maroon" />
                     <span className="text-[9px] font-mono text-slate-400">{(role.scale || 1.0).toFixed(1)}x</span>
                   </div>
