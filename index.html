@@ -8,12 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
     <script>
-      // More robust polyfill for deployment environments like Netlify
-      if (typeof window.process === 'undefined') {
-        window.process = { env: { API_KEY: "" } };
-      } else if (typeof window.process.env === 'undefined') {
-        window.process.env = { API_KEY: "" };
-      }
+      // Enhanced polyfill for browser environments
+      window.process = window.process || {};
+      window.process.env = window.process.env || {};
       
       tailwind.config = {
         theme: {
@@ -99,32 +96,14 @@
         }
 
         @media print {
-            @page {
-                margin: 0;
-                size: auto;
-            }
-            body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background-color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .no-print {
-                display: none !important;
-            }
+            @page { margin: 0; size: auto; }
+            body { background-color: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
             #flyer-preview-container {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                max-width: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                z-index: 99999 !important;
+                position: absolute !important; top: 0 !important; left: 0 !important;
+                width: 100vw !important; height: 100vh !important;
+                max-width: none !important; border-radius: 0 !important;
+                box-shadow: none !important; z-index: 99999 !important;
             }
         }
     </style>
