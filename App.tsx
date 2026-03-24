@@ -1,23 +1,23 @@
 
-import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Layers } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Trash2, Camera, Download, Sparkles, Award, Image as ImageIcon, Loader2, Sliders, Layout, UserCheck, CalendarDays, Rocket, Palette, AlertCircle, X, Check, Maximize2, Layers, Type, Shapes, Shield, Zap, Key } from 'lucide-react';
 import { RolePlayer, MeetingDetails } from './types.ts';
 import { generateFlyerBackground, generateRoleAvatar } from './geminiService.ts';
 import FlyerCanvas from './components/FlyerCanvas.tsx';
 import { toPng } from 'html-to-image';
 
 const FULL_MEETING_ROLES = [
-  "TMOD",
-  "TTM",
-  "General Evaluator",
-  "Timer",
-  "Ah Counter",
-  "Grammarian"
+  { role: "TMOD", cat: 'leadership' },
+  { role: "TTM", cat: 'leadership' },
+  { role: "General Evaluator", cat: 'leadership' },
+  { role: "Timer", cat: 'support' },
+  { role: "Ah Counter", cat: 'support' },
+  { role: "Grammarian", cat: 'support' }
 ];
 
 const SPOTLIGHT_ROLES = [
-  "Featured Speaker",
-  "Speech Evaluator"
+  { role: "Featured Speaker", cat: 'leadership' },
+  { role: "Speech Evaluator", cat: 'leadership' }
 ];
 
 const BRAND_COLORS = [
@@ -35,25 +35,31 @@ const BRAND_COLORS = [
 const App: React.FC = () => {
   const flyerRef = useRef<HTMLDivElement>(null);
   const [details, setDetails] = useState<MeetingDetails>({
-    title: "Meeting Invitation",
+    title: "MEETING INVITATION",
     theme: "The Art of Listening",
+    themeLabel: "Theme:",
+    leadershipLabel: "Leadership",
+    supportLabel: "Support Roles",
     date: new Date().toISOString().split('T')[0],
     time: "19:00",
     location: "Community Center / Zoom",
     clubName: "Your Club Name",
     flyerType: 'full',
     themeColor: 'blue',
-    globalPhotoScale: 1.0
+    globalPhotoScale: 1.0,
+    titleFont: 'sans',
+    badgeShape: 'capsule'
   });
 
   const createDefaultRoles = (type: 'full' | 'spotlight'): RolePlayer[] => {
     const rolesList = type === 'full' ? FULL_MEETING_ROLES : SPOTLIGHT_ROLES;
-    return rolesList.map((role) => ({
+    return rolesList.map((item) => ({
       id: Math.random().toString(36).substr(2, 9),
-      role,
+      role: item.role,
       name: "",
       photoUrl: null,
-      scale: 1.0
+      scale: 1.0,
+      category: item.cat as any
     }));
   };
 
@@ -65,6 +71,24 @@ const App: React.FC = () => {
   const [bgOpacity, setBgOpacity] = useState(100);
   const [photoStyle, setPhotoStyle] = useState<'circle' | 'square'>('circle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true);
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        const selected = await (window as any).aistudio.hasSelectedApiKey();
+        setHasApiKey(selected);
+      }
+    };
+    checkApiKey();
+  }, []);
+
+  const handleSelectKey = async () => {
+    if ((window as any).aistudio?.openSelectKey) {
+      await (window as any).aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
 
   const handleFlyerTypeChange = (type: 'full' | 'spotlight') => {
     if (details.flyerType === type) return;
@@ -79,7 +103,8 @@ const App: React.FC = () => {
       role: newRoleName,
       name: "",
       photoUrl: null,
-      scale: 1.0
+      scale: 1.0,
+      category: 'support'
     }]);
   };
 
@@ -136,7 +161,7 @@ const App: React.FC = () => {
       const url = await generateFlyerBackground(details.theme);
       if (url) {
         setBackgroundUrl(url);
-        setBgOpacity(100); // Reset blend to full on new generation
+        setBgOpacity(100);
       } else {
         setErrorMsg("Background generation returned no image.");
       }
@@ -172,7 +197,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col lg:flex-row font-sans text-slate-900">
-      {/* Error Alert */}
       {errorMsg && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[110] animate-in slide-in-from-top-4 duration-300">
           <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[320px]">
@@ -185,7 +209,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Editor Panel */}
       <div className="w-full lg:w-[45%] p-6 lg:p-12 overflow-y-auto no-print scroll-smooth">
         <header className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-4 mb-4">
@@ -193,18 +216,27 @@ const App: React.FC = () => {
               <Rocket className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight font-header shimmer-text">
-                Flyer Pro
-              </h1>
+              <h1 className="text-3xl font-black tracking-tight font-header shimmer-text">Flyer Pro</h1>
               <div className="flex items-center gap-2">
                 <span className="h-1 w-8 bg-tm-maroon rounded-full"></span>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Next Gen Creator</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Advanced Designer</p>
               </div>
             </div>
           </div>
-          <p className="text-slate-500 text-sm font-medium max-w-sm leading-relaxed text-left">
-            Professional AI-powered tools for Toastmasters clubs.
-          </p>
+          {!hasApiKey && (
+            <div className="bg-tm-yellow/20 border border-tm-yellow/30 p-4 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
+              <div className="flex items-center gap-3">
+                <Key className="w-5 h-5 text-tm-blue" />
+                <p className="text-[10px] font-bold text-tm-blue uppercase tracking-wider">API Key required for AI features</p>
+              </div>
+              <button 
+                onClick={handleSelectKey}
+                className="px-4 py-2 bg-tm-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-tm-blue/90 transition-all shadow-lg shadow-tm-blue/20"
+              >
+                Select Key
+              </button>
+            </div>
+          )}
         </header>
 
         <div className="space-y-8 stagger-in">
@@ -216,6 +248,10 @@ const App: React.FC = () => {
               <h2 className="text-base font-black text-slate-800 uppercase tracking-widest">Meeting Details</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="md:col-span-2 space-y-1.5 text-left">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Flyer Title (Heading)</label>
+                <input type="text" className={inputClasses} value={details.title} placeholder="e.g. MEETING INVITATION" onChange={(e) => setDetails({ ...details, title: e.target.value })} />
+              </div>
               <div className="space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Club Identity</label>
                 <input type="text" className={inputClasses} value={details.clubName} placeholder="e.g. Skyline Speakers" onChange={(e) => setDetails({ ...details, clubName: e.target.value })} />
@@ -223,6 +259,18 @@ const App: React.FC = () => {
               <div className="space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Meeting Theme</label>
                 <input type="text" className={inputClasses} value={details.theme} placeholder="e.g. Overcoming Fear" onChange={(e) => setDetails({ ...details, theme: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Theme Label Prefix</label>
+                <input type="text" className={inputClasses} value={details.themeLabel} placeholder="e.g. Theme: or Topic:" onChange={(e) => setDetails({ ...details, themeLabel: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Leadership Section Title</label>
+                <input type="text" className={inputClasses} value={details.leadershipLabel} placeholder="e.g. Leadership" onChange={(e) => setDetails({ ...details, leadershipLabel: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Support Section Title</label>
+                <input type="text" className={inputClasses} value={details.supportLabel} placeholder="e.g. Support Roles" onChange={(e) => setDetails({ ...details, supportLabel: e.target.value })} />
               </div>
               <div className="space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Event Date</label>
@@ -234,21 +282,12 @@ const App: React.FC = () => {
               </div>
               <div className="md:col-span-2 space-y-1.5 text-left">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">Location / Link</label>
-                <textarea 
-                  rows={3}
-                  className={`${inputClasses} resize-none leading-relaxed text-sm`} 
-                  value={details.location} 
-                  placeholder="Enter full venue address or meeting link" 
-                  onChange={(e) => setDetails({ ...details, location: e.target.value })} 
-                />
+                <textarea rows={2} className={`${inputClasses} resize-none text-sm`} value={details.location} onChange={(e) => setDetails({ ...details, location: e.target.value })} />
               </div>
             </div>
           </section>
 
           <section className="bg-tm-blue rounded-[2.5rem] p-8 shadow-2xl shadow-tm-blue/30 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-tm-yellow/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-tm-maroon/20 rounded-full -ml-16 -mb-16 blur-3xl"></div>
-            
             <div className="relative z-10 space-y-8">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="shrink-0 text-left">
@@ -257,16 +296,9 @@ const App: React.FC = () => {
                     Studio Style
                   </h2>
                 </div>
-                <button 
-                  onClick={handleGenerateBackground}
-                  disabled={isGeneratingBg}
-                  className="group min-w-max px-8 py-4 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl hover:scale-105 active:scale-95 disabled:cursor-not-allowed overflow-hidden"
-                >
-                  {isGeneratingBg ? (
-                    <><Loader2 className="w-4 h-4 animate-spin shrink-0" /><span>Generating...</span></>
-                  ) : (
-                    <><Sparkles className="w-4 h-4 shrink-0" /><span>AI Magic BG</span></>
-                  )}
+                <button onClick={handleGenerateBackground} disabled={isGeneratingBg} className="group min-w-max px-8 py-4 bg-white text-tm-blue rounded-full text-xs font-black uppercase tracking-widest hover:bg-tm-yellow transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-4 shadow-xl">
+                  {isGeneratingBg ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Sparkles className="w-4 h-4 shrink-0" />}
+                  <span>AI Magic BG</span>
                 </button>
               </div>
 
@@ -278,83 +310,49 @@ const App: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                     {BRAND_COLORS.map((color) => (
-                      <button 
-                        key={color.id}
-                        onClick={() => setDetails(prev => ({ ...prev, themeColor: color.id as any }))}
-                        className={`group relative h-12 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${details.themeColor === color.id ? 'border-tm-yellow scale-105 shadow-lg' : 'border-white/10 hover:border-white/30'}`}
-                        style={{ background: color.hex }}
-                        title={color.label}
-                      >
-                        {details.themeColor === color.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                            <Check className={`w-5 h-5 ${color.id === 'yellow' || color.id === 'grey' ? 'text-slate-900' : 'text-tm-yellow'}`} />
-                          </div>
-                        )}
+                      <button key={color.id} onClick={() => setDetails(prev => ({ ...prev, themeColor: color.id as any }))} className={`group relative h-12 rounded-2xl border-2 transition-all duration-300 ${details.themeColor === color.id ? 'border-tm-yellow scale-105 shadow-lg' : 'border-white/10'}`} style={{ background: color.hex }}>
+                        {details.themeColor === color.id && <div className="absolute inset-0 flex items-center justify-center bg-black/10"><Check className="w-5 h-5 text-tm-yellow" /></div>}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Background Blend Slider */}
+                <div className="space-y-4 text-left">
+                  <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
+                    <Type className="w-3.5 h-3.5" />
+                    Title Font
+                  </div>
+                  <div className="flex bg-white/10 p-1.5 rounded-2xl border border-white/5">
+                    <button onClick={() => setDetails(prev => ({ ...prev, titleFont: 'sans' }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${details.titleFont === 'sans' ? 'bg-white text-tm-blue' : 'hover:bg-white/5'}`}>Modern Sans</button>
+                    <button onClick={() => setDetails(prev => ({ ...prev, titleFont: 'serif' }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${details.titleFont === 'serif' ? 'bg-white text-tm-blue' : 'hover:bg-white/5'}`}>Elegant Serif</button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-left">
+                  <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
+                    <Shapes className="w-3.5 h-3.5" />
+                    Badge Shape
+                  </div>
+                  <div className="flex bg-white/10 p-1.5 rounded-2xl border border-white/5">
+                    <button onClick={() => setDetails(prev => ({ ...prev, badgeShape: 'capsule' }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${details.badgeShape === 'capsule' ? 'bg-white text-tm-blue' : 'hover:bg-white/5'}`}>Capsule</button>
+                    <button onClick={() => setDetails(prev => ({ ...prev, badgeShape: 'modern' }))} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${details.badgeShape === 'modern' ? 'bg-white text-tm-blue' : 'hover:bg-white/5'}`}>Sharp</button>
+                  </div>
+                </div>
+
                 <div className="md:col-span-2 space-y-4 text-left">
                   <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5" />
-                      Background Blend
-                    </div>
+                    <div className="flex items-center gap-2"><Layers className="w-3.5 h-3.5" />Background Blend</div>
                     <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{bgOpacity}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    step="5" 
-                    value={bgOpacity} 
-                    onChange={(e) => setBgOpacity(parseInt(e.target.value))} 
-                    className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" 
-                  />
+                  <input type="range" min="0" max="100" step="5" value={bgOpacity} onChange={(e) => setBgOpacity(parseInt(e.target.value))} className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" />
                 </div>
 
-                {/* Global Scale Slider */}
                 <div className="md:col-span-2 space-y-4 text-left">
                   <div className="flex items-center justify-between text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <div className="flex items-center gap-2">
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      Global Frame Scale
-                    </div>
+                    <div className="flex items-center gap-2"><Maximize2 className="w-3.5 h-3.5" />Global Frame Scale</div>
                     <span className="bg-white/20 px-2 py-0.5 rounded-md font-mono text-[9px]">{details.globalPhotoScale?.toFixed(1)}x</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0.5" 
-                    max="2.0" 
-                    step="0.1" 
-                    value={details.globalPhotoScale} 
-                    onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} 
-                    className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" 
-                  />
-                </div>
-
-                <div className="space-y-4 text-left">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <Layout className="w-3.5 h-3.5" />
-                    Layout
-                  </div>
-                  <div className="flex bg-white/10 p-1.5 rounded-2xl border border-white/5">
-                    <button onClick={() => handleFlyerTypeChange('full')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${details.flyerType === 'full' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Classic</button>
-                    <button onClick={() => handleFlyerTypeChange('spotlight')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${details.flyerType === 'spotlight' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Spotlight</button>
-                  </div>
-                </div>
-
-                <div className="space-y-4 text-left">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-tm-yellow uppercase tracking-widest">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    Frame Cut
-                  </div>
-                  <div className="flex bg-white/10 p-1.5 rounded-2xl border border-white/5">
-                    <button onClick={() => setPhotoStyle('circle')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${photoStyle === 'circle' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Circle</button>
-                    <button onClick={() => setPhotoStyle('square')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${photoStyle === 'square' ? 'bg-white text-tm-blue shadow-xl' : 'hover:bg-white/5'}`}>Square</button>
-                  </div>
+                  <input type="range" min="0.5" max="2.0" step="0.1" value={details.globalPhotoScale} onChange={(e) => setDetails({ ...details, globalPhotoScale: parseFloat(e.target.value) })} className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-tm-yellow" />
                 </div>
               </div>
             </div>
@@ -362,21 +360,18 @@ const App: React.FC = () => {
 
           <section className="space-y-6">
             <div className="flex justify-between items-end px-2">
-              <div className="text-left">
-                <h2 className="text-base font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-tm-maroon" />
-                  Role Players
-                </h2>
-              </div>
-              <button onClick={addRole} className="group flex items-center gap-2 px-5 py-2.5 bg-tm-maroon text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-tm-maroon/90 shadow-xl transition-all hover:-translate-y-1 active:scale-95">
-                <Plus className="w-3 h-3 group-hover:rotate-90 transition-transform" />
+              <h2 className="text-base font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-tm-maroon" />
+                Role Players
+              </h2>
+              <button onClick={addRole} className="flex items-center gap-2 px-5 py-2.5 bg-tm-maroon text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-tm-maroon/90 shadow-xl transition-all">
+                <Plus className="w-3 h-3" />
                 Add Member
               </button>
             </div>
-
             <div className="grid grid-cols-1 gap-4">
               {roles.map((role) => (
-                <div key={role.id} className="group bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col gap-4">
+                <div key={role.id} className="group bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col gap-4 focus-within:shadow-xl transition-all duration-300 relative overflow-hidden">
                   <div className="flex items-center gap-6">
                     <div className="relative shrink-0">
                       <div className={`w-16 h-16 ${photoStyle === 'circle' ? 'rounded-full' : 'rounded-2xl'} bg-slate-50 border-2 border-slate-100 flex items-center justify-center overflow-hidden transition-all group-hover:border-tm-maroon/30`}>
@@ -388,27 +383,59 @@ const App: React.FC = () => {
                           <Camera className="w-5 h-5 text-slate-300" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <label className="p-2 bg-tm-blue text-white rounded-full cursor-pointer shadow-xl hover:scale-110 active:scale-90 transition-all">
+                      <div className="absolute -bottom-1 -right-1 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-20">
+                        <label className="p-2 bg-tm-blue text-white rounded-full cursor-pointer shadow-xl hover:scale-110 active:scale-95 transition-all">
                           <Plus className="w-3 h-3" />
                           <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(role.id, e)} />
                         </label>
-                        <button onClick={() => handleMagicPhoto(role.id, role.role)} disabled={generatingIds.has(role.id)} className="p-2 bg-tm-yellow text-tm-blue rounded-full shadow-xl hover:scale-110 active:scale-90 transition-all disabled:opacity-50">
+                        <button onClick={() => handleMagicPhoto(role.id, role.role)} className="p-2 bg-tm-yellow text-tm-blue rounded-full shadow-xl hover:scale-110 active:scale-95 transition-all">
                           <Sparkles className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex-1 text-left">
-                      <input className="w-full text-[9px] font-black text-tm-maroon border-none bg-transparent focus:ring-0 p-0 uppercase tracking-widest placeholder:text-tm-maroon/30" value={role.role} onChange={(e) => updateRole(role.id, { role: e.target.value })} placeholder="Enter Role..." />
-                      <input className="w-full text-sm font-bold text-slate-800 border-none bg-transparent focus:ring-0 p-0 placeholder:text-slate-300" value={role.name} onChange={(e) => updateRole(role.id, { name: e.target.value })} placeholder="Member Name" />
+                    <div className="flex-1 text-left space-y-1">
+                      <input 
+                        className="w-full text-[9px] font-black text-tm-maroon border-none bg-transparent p-0 uppercase tracking-widest focus:ring-0 placeholder:text-tm-maroon/30" 
+                        value={role.role} 
+                        onChange={(e) => updateRole(role.id, { role: e.target.value })} 
+                        placeholder="Role Name"
+                      />
+                      <input 
+                        className="w-full text-sm font-bold text-slate-800 border-none bg-transparent p-0 focus:ring-0 placeholder:text-slate-300" 
+                        value={role.name} 
+                        onChange={(e) => updateRole(role.id, { name: e.target.value })} 
+                        placeholder="Member Name" 
+                      />
+                      <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 mt-2 w-max">
+                        <button 
+                          onClick={() => updateRole(role.id, { category: 'leadership' })}
+                          className={`px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${role.category === 'leadership' ? 'bg-white text-tm-blue shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          Leadership
+                        </button>
+                        <button 
+                          onClick={() => updateRole(role.id, { category: 'support' })}
+                          className={`px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-widest transition-all ${role.category === 'support' ? 'bg-white text-tm-blue shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          Support
+                        </button>
+                      </div>
                     </div>
-                    <button onClick={() => removeRole(role.id)} className="p-3 text-slate-200 hover:text-red-500 transition-all duration-200">
+                    <button onClick={() => removeRole(role.id)} className="p-3 text-slate-200 hover:text-red-500 transition-all">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                   <div className="flex items-center gap-4 px-1 pt-2 border-t border-slate-50">
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Local Scale</span>
-                    <input type="range" min="0.5" max="2.0" step="0.05" value={role.scale || 1.0} onChange={(e) => updateRole(role.id, { scale: parseFloat(e.target.value) })} className="flex-1 h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tm-maroon" />
+                    <input 
+                      type="range" 
+                      min="0.5" 
+                      max="2.0" 
+                      step="0.05" 
+                      value={role.scale || 1.0} 
+                      onChange={(e) => updateRole(role.id, { scale: parseFloat(e.target.value) })} 
+                      className="flex-1 h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tm-maroon" 
+                    />
                     <span className="text-[9px] font-mono text-slate-400">{(role.scale || 1.0).toFixed(1)}x</span>
                   </div>
                 </div>
@@ -418,17 +445,16 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full lg:w-[55%] bg-[#E2E8F0] flex flex-col items-center justify-center p-6 lg:p-12 sticky top-0 print:p-0 print:bg-white print:static print:w-full print:h-screen">
-        <div className="mb-8 flex gap-4 no-print z-50 animate-in fade-in zoom-in duration-1000 delay-300">
-          <button onClick={handleDownloadImage} disabled={isDownloading} className="group flex items-center gap-3 px-8 py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:bg-tm-blue/90 hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50">
+      <div className="w-full lg:w-[55%] bg-[#E2E8F0] flex flex-col items-center justify-center p-6 lg:p-12 sticky top-0 print:p-0">
+        <div className="mb-8 flex gap-4 no-print z-50">
+          <button onClick={handleDownloadImage} disabled={isDownloading} className="flex items-center gap-3 px-8 py-4 bg-tm-blue text-white rounded-2xl font-black uppercase tracking-widest hover:shadow-2xl transition-all disabled:opacity-50">
             {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
             <span>{isDownloading ? 'Saving...' : 'Export PNG'}</span>
           </button>
         </div>
-        <div id="flyer-preview-container" ref={flyerRef} className="w-full max-w-[480px] shadow-2xl bg-tm-blue aspect-[3/4] relative print:shadow-none print:max-w-none">
+        <div id="flyer-preview-container" ref={flyerRef} className="w-full max-w-[480px] shadow-2xl bg-tm-blue aspect-[3/4] relative print:shadow-none">
           <FlyerCanvas details={details} roles={roles} backgroundUrl={backgroundUrl} bgOpacity={bgOpacity} photoStyle={photoStyle} />
         </div>
-        <div className="mt-8 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] no-print opacity-50">Live Preview</div>
       </div>
     </div>
   );

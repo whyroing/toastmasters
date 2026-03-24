@@ -2,9 +2,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 export async function generateFlyerBackground(theme: string): Promise<string | null> {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("API key is missing. Please select a project with billing enabled to use this feature.");
+    throw new Error("API key is missing. Please select an API key in the settings or use the 'Select API Key' button.");
   }
 
   try {
@@ -15,13 +15,14 @@ export async function generateFlyerBackground(theme: string): Promise<string | n
     Communication and leadership vibes. Vertical layout. No text, no people.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: {
         parts: [{ text: prompt }]
       },
       config: {
         imageConfig: {
-          aspectRatio: "3:4"
+          aspectRatio: "3:4",
+          imageSize: "1K"
         }
       }
     });
@@ -36,14 +37,17 @@ export async function generateFlyerBackground(theme: string): Promise<string | n
     }
     
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Flyer BG generation error:", error);
+    if (error.message?.includes("Requested entity was not found")) {
+      throw new Error("API Key error. Please try selecting your API key again.");
+    }
     throw error;
   }
 }
 
 export async function generateRoleAvatar(role: string, theme: string): Promise<string | null> {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("API key is missing.");
   }
@@ -55,13 +59,14 @@ export async function generateRoleAvatar(role: string, theme: string): Promise<s
     Corporate attire, centered framing, professional studio lighting, blurred background.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: {
         parts: [{ text: prompt }]
       },
       config: {
         imageConfig: {
-          aspectRatio: "1:1"
+          aspectRatio: "1:1",
+          imageSize: "1K"
         }
       }
     });
@@ -76,8 +81,11 @@ export async function generateRoleAvatar(role: string, theme: string): Promise<s
     }
     
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Avatar generation error:", error);
+    if (error.message?.includes("Requested entity was not found")) {
+      throw new Error("API Key error. Please try selecting your API key again.");
+    }
     throw error;
   }
 }

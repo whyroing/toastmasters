@@ -49,12 +49,12 @@ const RoleItem: React.FC<RoleItemProps> = ({
 
   return (
     <div 
-      className={`flex flex-col items-center group animate-in fade-in zoom-in duration-300 min-w-0`}
+      className={`flex flex-col items-center group animate-in fade-in zoom-in duration-300 min-w-0 shrink-0`}
       style={{ width: `${containerWidth}px` }}
     >
-      <div className="relative mb-2 flex justify-center w-full">
+      <div className="relative mb-2 flex justify-center w-full shrink-0">
         <div 
-          className={`${frameClass} border-[3px] ${isLightBackground ? 'border-tm-blue/20' : 'border-tm-yellow/40'} overflow-hidden bg-white/10 shadow-xl group-hover:${isLightBackground ? 'border-tm-blue' : 'border-tm-yellow'} transition-all duration-300 shrink-0 transform group-hover:scale-105`}
+          className={`${frameClass} border-[3px] ${isLightBackground ? 'border-tm-blue/20' : 'border-tm-yellow/40'} overflow-hidden bg-white/10 shadow-xl transition-all duration-300 shrink-0 transform`}
           style={{ width: `${finalSize}px`, height: `${finalSize}px` }}
         >
           {role?.photoUrl ? (
@@ -67,10 +67,10 @@ const RoleItem: React.FC<RoleItemProps> = ({
         </div>
       </div>
       <div className="text-center w-full px-1 overflow-hidden">
-        <p className={`${variant === 'large' ? 'text-[7px] sm:text-[8px]' : 'text-[6px] sm:text-[7px]'} font-black ${textRoleClass} uppercase tracking-widest leading-none mb-1 truncate drop-shadow-sm`}>
+        <p className={`${variant === 'large' ? 'text-[7px] sm:text-[8px]' : 'text-[6px] sm:text-[7px]'} font-black ${textRoleClass} uppercase tracking-widest leading-none mb-1 break-words drop-shadow-sm`}>
           {role?.role || labelIfEmpty || "Role"}
         </p>
-        <p className={`${variant === 'large' ? 'text-[10px] sm:text-[12px]' : 'text-[9px] sm:text-[10px]'} font-bold ${textMainClass} leading-tight drop-shadow-lg truncate w-full`}>
+        <p className={`${variant === 'large' ? 'text-[10px] sm:text-[12px]' : 'text-[9px] sm:text-[10px]'} font-bold ${textMainClass} leading-tight drop-shadow-lg break-words w-full`}>
           {role?.name || "TBA"}
         </p>
       </div>
@@ -93,7 +93,7 @@ const CategorySection: React.FC<{
     <div className="flex flex-col gap-3 w-full items-center shrink-0 mb-4">
       <div className={`flex items-center gap-2 border-b ${isLightBackground ? 'border-tm-blue/10' : 'border-tm-yellow/20'} pb-0.5 w-full max-w-[85%] justify-center`}>
         <Icon className={`w-2.5 h-2.5 ${isLightBackground ? 'text-tm-blue' : 'text-tm-yellow'} shrink-0`} />
-        <h3 className={`text-[6px] lg:text-[7px] font-black tracking-[0.3em] uppercase ${isLightBackground ? 'text-tm-blue' : 'text-tm-yellow'} truncate`}>{title}</h3>
+        <h3 className={`text-[6px] lg:text-[7px] font-black tracking-[0.3em] uppercase ${isLightBackground ? 'text-tm-blue' : 'text-tm-yellow'}`}>{title}</h3>
       </div>
       <div className={`flex flex-wrap justify-center items-start w-full gap-x-3 sm:gap-x-4 lg:gap-x-6 gap-y-4`}>
         {items.map((role, i) => (
@@ -136,15 +136,15 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
     default: baseColorClass = 'bg-tm-blue';
   }
 
-  const findRoles = (keywords: string[]) => 
-    roles.filter(r => keywords.some(k => r.role.toUpperCase().includes(k.toUpperCase())));
-
-  const leadership = findRoles(['TMOD', 'TTM', 'GENERAL EVALUATOR', 'GE']).filter(r => !r.role.toUpperCase().match(/\d/)); 
-  const support = findRoles(['TIMER', 'AH COUNTER', 'GRAMMARIAN']);
+  // Stable category assignment prevents jumping frames while typing
+  const leadership = roles.filter(r => r.category === 'leadership');
+  const support = roles.filter(r => r.category === 'support');
   
   const textMainClass = isLightBackground ? 'text-slate-900' : 'text-white';
   const textAccentClass = isLightBackground ? 'text-tm-blue' : 'text-tm-yellow';
   const badgeClass = isLightBackground ? 'bg-tm-blue text-white' : 'bg-tm-maroon/90 text-tm-yellow';
+  const badgeRounding = details.badgeShape === 'modern' ? 'rounded-xl' : 'rounded-full';
+  const headerFont = details.titleFont === 'serif' ? 'font-brand' : 'font-header';
 
   const logoUrl = "https://i.postimg.cc/V6m9zvZR/logo.jpg";
 
@@ -164,17 +164,20 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
         
         <div className="mb-4 flex flex-col items-center text-center shrink-0 w-full overflow-hidden">
           <div className="mb-2">
-             <img src={logoUrl} alt="TM Logo" className="h-8 sm:h-10 w-auto object-contain rounded bg-white p-0.5" />
+             <img src={logoUrl} alt="TM Logo" className="h-8 sm:h-10 w-auto object-contain rounded bg-white p-0.5 shadow-sm" />
           </div>
           <div className="flex flex-col text-center overflow-hidden mb-1">
               <span className={`text-[5px] lg:text-[6px] font-black tracking-[0.4em] uppercase ${textAccentClass}`}>TOASTMASTERS INTERNATIONAL</span>
-              <span className={`text-[9px] lg:text-[11px] font-bold uppercase tracking-widest truncate max-w-[200px] mx-auto`}>{details.clubName}</span>
+              <span className={`text-[9px] lg:text-[11px] font-bold uppercase tracking-widest mx-auto`}>{details.clubName}</span>
           </div>
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-header font-black mb-1.5 drop-shadow-2xl uppercase truncate w-full">
-            {details.flyerType === 'spotlight' ? "SPOTLIGHT" : details.title}
+          <h1 className={`text-lg sm:text-xl lg:text-2xl ${headerFont} font-black mb-1.5 drop-shadow-2xl w-full tracking-tight px-2 break-words`}>
+            {details.title}
           </h1>
-          <div className={`${badgeClass} py-0.5 px-6 rounded-full border border-white/20 shadow-xl max-w-[90%] mx-auto`}>
-            <p className={`text-[8px] sm:text-[10px] lg:text-[11px] font-bold italic truncate`}>Theme: {details.theme}</p>
+          <div className={`${badgeClass} py-1 px-6 ${badgeRounding} border border-white/20 shadow-xl max-w-[95%] mx-auto overflow-hidden`}>
+            <p className={`text-[8px] sm:text-[10px] lg:text-[11px] font-bold italic break-words`}>
+              <span className="not-italic mr-1">{details.themeLabel}</span>
+              {details.theme}
+            </p>
           </div>
         </div>
 
@@ -187,8 +190,8 @@ const FlyerCanvas: React.FC<FlyerCanvasProps> = ({
              </div>
           ) : (
              <div className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto no-scrollbar py-2">
-               <CategorySection title="Leadership Team" icon={Shield} items={leadership} photoStyle={photoStyle} layoutPattern={layoutPattern} isFocusedSection={true} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
-               <CategorySection title="Technical Support" icon={Zap} items={support} photoStyle={photoStyle} layoutPattern={layoutPattern} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
+               <CategorySection title={details.leadershipLabel || "Leadership"} icon={Shield} items={leadership} photoStyle={photoStyle} layoutPattern={layoutPattern} isFocusedSection={true} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
+               <CategorySection title={details.supportLabel || "Support Roles"} icon={Zap} items={support} photoStyle={photoStyle} layoutPattern={layoutPattern} themeColor={themeColor} isLightBackground={isLightBackground} globalScale={globalPhotoScale} />
              </div>
           )}
         </div>
